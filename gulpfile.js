@@ -247,6 +247,10 @@ function createWebpackConfig(
         pdfjs: path.join(__dirname, "src"),
         "pdfjs-web": path.join(__dirname, "web"),
         "pdfjs-lib": path.join(__dirname, "web/pdfjs"),
+        "pdfjs-l10n": path.join(
+          __dirname,
+          "build/dev-l10n/default_l10n_strings"
+        ),
       },
     },
     devtool: enableSourceMaps ? "source-map" : undefined,
@@ -704,6 +708,50 @@ function getDefaultPreferences(dir) {
 
   return AppOptions.getAll(OptionKind.PREFERENCE);
 }
+
+function buildDefaultL10nStrings() {
+  console.log();
+  console.log("### Building default l10n strings");
+
+  const content = fs.readFileSync("l10n/en-US/viewer.properties").toString(),
+    stringObj = Object.create(null);
+  // Strip out comments and line-breaks.
+  const regExp = /^\s*#/;
+  for (const line of content.split("\n")) {
+    if (!line || regExp.test(line)) {
+      continue;
+    }
+    const [key, value] = line.split("=");
+    stringObj[key] = value;
+  }
+  return stringObj;
+}
+
+function preprocessDefaultL10nStrings(content) {
+  const preprocessor2 = require("./external/builder/preprocessor2.js");
+  const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
+
+  const bundleDefines = builder.merge(DEFINES, {
+    DEFAULT_L10N_STRINGS: buildDefaultL10nStrings(),
+  });
+
+  content = preprocessor2.preprocessPDFJSCode(
+    {
+      rootPath: __dirname,
+      defines: bundleDefines,
+    },
+    content
+  );
+
+  return licenseHeader + "\n" + content + "\n";
+}
+
+gulp.task("default_l10n_strings", function () {
+  return gulp
+    .src("web/default_l10n_strings.js")
+    .pipe(transform("utf8", preprocessDefaultL10nStrings))
+    .pipe(gulp.dest("build/dev-l10n"));
+});
 
 gulp.task("locale", function () {
   const VIEWER_LOCALE_OUTPUT = "web/locale/";
@@ -1834,6 +1882,13 @@ gulp.task(
 gulp.task(
   "server",
   gulp.parallel(
+    function watchDefaultL10nStrings() {
+      gulp.watch(
+        ["l10n/en-US/", "web/default_l10n_strings.js"],
+        { ignoreInitial: false },
+        gulp.series("default_l10n_strings")
+      );
+    },
     function watchDevSandbox() {
       gulp.watch(
         [
