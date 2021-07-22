@@ -83,7 +83,7 @@ const nonSerializable = function nonSerializableClosure() {
 class Dict {
   constructor(xref = null) {
     // Map should only be used internally, use functions below to access.
-    this._map = Object.create(null);
+    this._map = new Map();
     this.xref = xref;
     this.objId = null;
     this.suppressEncryption = false;
@@ -95,12 +95,12 @@ class Dict {
   }
 
   get size() {
-    return Object.keys(this._map).length;
+    return this._map.size;
   }
 
   // Automatically dereferences Ref objects.
   get(key1, key2, key3) {
-    let value = this._map[key1];
+    let value = this._map.get(key1);
     if (value === undefined && key2 !== undefined) {
       if (
         (typeof PDFJSDev === "undefined" ||
@@ -109,7 +109,7 @@ class Dict {
       ) {
         unreachable("Dict.get: Expected keys to be ordered by length.");
       }
-      value = this._map[key2];
+      value = this._map.get(key2);
       if (value === undefined && key3 !== undefined) {
         if (
           (typeof PDFJSDev === "undefined" ||
@@ -118,7 +118,7 @@ class Dict {
         ) {
           unreachable("Dict.get: Expected keys to be ordered by length.");
         }
-        value = this._map[key3];
+        value = this._map.get(key3);
       }
     }
     if (value instanceof Ref && this.xref) {
@@ -129,7 +129,7 @@ class Dict {
 
   // Same as get(), but returns a promise and uses fetchIfRefAsync().
   async getAsync(key1, key2, key3) {
-    let value = this._map[key1];
+    let value = this._map.get(key1);
     if (value === undefined && key2 !== undefined) {
       if (
         (typeof PDFJSDev === "undefined" ||
@@ -138,7 +138,7 @@ class Dict {
       ) {
         unreachable("Dict.getAsync: Expected keys to be ordered by length.");
       }
-      value = this._map[key2];
+      value = this._map.get(key2);
       if (value === undefined && key3 !== undefined) {
         if (
           (typeof PDFJSDev === "undefined" ||
@@ -147,7 +147,7 @@ class Dict {
         ) {
           unreachable("Dict.getAsync: Expected keys to be ordered by length.");
         }
-        value = this._map[key3];
+        value = this._map.get(key3);
       }
     }
     if (value instanceof Ref && this.xref) {
@@ -158,7 +158,7 @@ class Dict {
 
   // Same as get(), but dereferences all elements if the result is an Array.
   getArray(key1, key2, key3) {
-    let value = this._map[key1];
+    let value = this._map.get(key1);
     if (value === undefined && key2 !== undefined) {
       if (
         (typeof PDFJSDev === "undefined" ||
@@ -167,7 +167,7 @@ class Dict {
       ) {
         unreachable("Dict.getArray: Expected keys to be ordered by length.");
       }
-      value = this._map[key2];
+      value = this._map.get(key2);
       if (value === undefined && key3 !== undefined) {
         if (
           (typeof PDFJSDev === "undefined" ||
@@ -176,7 +176,7 @@ class Dict {
         ) {
           unreachable("Dict.getArray: Expected keys to be ordered by length.");
         }
-        value = this._map[key3];
+        value = this._map.get(key3);
       }
     }
     if (value instanceof Ref && this.xref) {
@@ -196,16 +196,16 @@ class Dict {
 
   // No dereferencing.
   getRaw(key) {
-    return this._map[key];
+    return this._map.get(key);
   }
 
   getKeys() {
-    return Object.keys(this._map);
+    return [...this._map.keys()];
   }
 
   // No dereferencing.
   getRawValues() {
-    return Object.values(this._map);
+    return [...this._map.values()];
   }
 
   set(key, value) {
@@ -219,16 +219,21 @@ class Dict {
         unreachable('Dict.set: The "value" cannot be undefined.');
       }
     }
-    this._map[key] = value;
+    this._map.set(key, value);
   }
 
   has(key) {
-    return this._map[key] !== undefined;
+    return this._map.has(key);
   }
 
   forEach(callback) {
-    for (const key in this._map) {
-      callback(key, this.get(key));
+    for (const [key, value] of this._map) {
+      callback(
+        key,
+        value instanceof Ref && this.xref
+          ? this.xref.fetch(value, this.suppressEncryption)
+          : value
+      );
     }
   }
 
@@ -249,7 +254,7 @@ class Dict {
       if (!(dict instanceof Dict)) {
         continue;
       }
-      for (const [key, value] of Object.entries(dict._map)) {
+      for (const [key, value] of dict._map) {
         let property = properties.get(key);
         if (property === undefined) {
           property = [];
@@ -265,20 +270,21 @@ class Dict {
     }
     for (const [name, values] of properties) {
       if (values.length === 1 || !(values[0] instanceof Dict)) {
-        mergedDict._map[name] = values[0];
+        mergedDict._map.set(name, values[0]);
         continue;
       }
       const subDict = new Dict(xref);
 
       for (const dict of values) {
-        for (const [key, value] of Object.entries(dict._map)) {
-          if (subDict._map[key] === undefined) {
-            subDict._map[key] = value;
+        for (const [key, value] of dict._map) {
+          if (subDict._map.has(key)) {
+            continue;
           }
+          subDict._map.set(key, value);
         }
       }
       if (subDict.size > 0) {
-        mergedDict._map[name] = subDict;
+        mergedDict._map.set(name, subDict);
       }
     }
     properties.clear();
