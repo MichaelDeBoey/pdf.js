@@ -1565,10 +1565,7 @@ function buildLib(defines, dir) {
       ],
       { base: "src/" }
     ),
-    gulp.src(
-      ["examples/node/domstubs.js", "web/*.js", "!web/{pdfjs,viewer}.js"],
-      { base: "." }
-    ),
+    gulp.src(["web/*.js", "!web/{pdfjs,viewer}.js"], { base: "." }),
     gulp.src("test/unit/*.js", { base: "." }),
   ]);
 

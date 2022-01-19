@@ -78,11 +78,6 @@ const pdfjsVersion =
 const pdfjsBuild =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
-const SVGGraphics =
-  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")
-    ? require("./display/svg.js").SVGGraphics
-    : null;
-
 export {
   AbortException,
   AnnotationEditorLayer,
@@ -119,7 +114,6 @@ export {
   renderTextLayer,
   setLayerDimensions,
   shadow,
-  SVGGraphics,
   UnexpectedResponseException,
   updateTextLayer,
   Util,
