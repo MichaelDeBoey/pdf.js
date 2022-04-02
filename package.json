@@ -13,7 +13,6 @@
     "canvas": "^2.11.2",
     "core-js": "^3.30.2",
     "cross-env": "^7.0.3",
-    "es-module-shims": "1.4.7",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-fetch-options": "^0.0.5",

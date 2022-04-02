@@ -935,6 +935,7 @@ async function startBrowser(browserName, startUrl = "") {
       "gfx.offscreencanvas.enabled": true,
       // Disable gpu acceleration
       "gfx.canvas.accelerated": false,
+      "dom.importMaps.enabled": true,
     };
   }
 
