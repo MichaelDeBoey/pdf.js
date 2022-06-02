@@ -1242,6 +1242,8 @@ gulp.task(
       const MOZCENTRAL_WEB_FILES = [
         ...COMMON_WEB_FILES,
         "!web/images/toolbarButton-openFile.svg",
+        "!web/images/loading.svg",
+        "!web/images/loading-dark.svg",
       ];
 
       // Clear out everything in the firefox extension build directory

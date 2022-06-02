@@ -68,7 +68,11 @@
   --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
   --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
 
+  /*#if MOZCENTRAL*/
+  --loading-icon: url(chrome://global/skin/icons/loading-dial.svg);
+  /*#else*/
   --loading-icon: url(images/loading.svg);
+  /*#endif*/
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
   --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
   --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
@@ -157,7 +161,9 @@
     /* This image is used in <input> elements, which unfortunately means that
      * the `mask-image` approach used with all of the other images doesn't work
      * here; hence why we still have two versions of this particular image. */
+    /*#if !MOZCENTRAL*/
     --loading-icon: url(images/loading-dark.svg);
+    /*#endif*/
   }
 }
 
@@ -479,6 +485,11 @@ select {
   background-image: var(--loading-icon);
   background-repeat: no-repeat;
   background-position: calc(50% + 48% * var(--dir-factor));
+
+  /*#if MOZCENTRAL*/
+  /*-moz-context-properties: fill;*/
+  /*fill: currentColor;*/
+  /*#endif*/
 }
 #findInput[data-status="notFound"] {
   background-color: rgba(255, 102, 102, 1);
@@ -1015,6 +1026,11 @@ a.secondaryToolbarButton[href="#"] {
   background-image: var(--loading-icon);
   background-repeat: no-repeat;
   background-position: 3px;
+
+  /*#if MOZCENTRAL*/
+  /*-moz-context-properties: fill;*/
+  /*fill: currentColor;*/
+  /*#endif*/
 }
 /*#if !MOZCENTRAL*/
 #pageNumber::-webkit-inner-spin-button {
