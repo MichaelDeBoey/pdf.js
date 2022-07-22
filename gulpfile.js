@@ -42,7 +42,6 @@ const through = require("through2");
 const BUILD_DIR = "build/";
 const L10N_DIR = "l10n/";
 const TEST_DIR = "test/";
-const EXTENSION_SRC_DIR = "extensions/";
 
 const BASELINE_DIR = BUILD_DIR + "baseline/";
 const MOZCENTRAL_BASELINE_DIR = BUILD_DIR + "mozcentral.baseline/";
@@ -1254,26 +1253,29 @@ gulp.task(
   )
 );
 
-function preprocessDefaultPreferences(content) {
-  const preprocessor2 = require("./external/builder/preprocessor2.js");
+function createDefaultPrefsFile() {
+  const fileName = "PdfJsViewerPrefs.js";
   const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
 
-  const MODIFICATION_WARNING =
-    "//\n// THIS FILE IS GENERATED AUTOMATICALLY, DO NOT EDIT MANUALLY!\n//\n";
+  const MODIFICATION_WARNING = `
+//
+// THIS FILE IS GENERATED AUTOMATICALLY, DO NOT EDIT MANUALLY!
+//
+`;
 
-  const bundleDefines = builder.merge(DEFINES, {
-    DEFAULT_PREFERENCES: getDefaultPreferences("mozcentral/"),
-  });
+  const prefs = getDefaultPreferences("mozcentral/");
+  const buf = [licenseHeader, MODIFICATION_WARNING];
 
-  content = preprocessor2.preprocessPDFJSCode(
-    {
-      rootPath: __dirname,
-      defines: bundleDefines,
-    },
-    content
-  );
+  for (const name in prefs) {
+    let value = prefs[name];
 
-  return licenseHeader + "\n" + MODIFICATION_WARNING + "\n" + content + "\n";
+    if (typeof value === "string") {
+      value = `"${value}"`;
+    }
+    buf.push(`pref("pdfjs.${name}", ${value});`);
+  }
+
+  return createStringSource(fileName, buf.join("\n"));
 }
 
 function replaceMozcentralCSS() {
@@ -1297,8 +1299,7 @@ gulp.task(
         MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + "browser/extensions/pdfjs/",
         MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + "content/",
         MOZCENTRAL_L10N_DIR =
-          MOZCENTRAL_DIR + "browser/locales/en-US/pdfviewer/",
-        FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + "/firefox/content/";
+          MOZCENTRAL_DIR + "browser/locales/en-US/pdfviewer/";
 
       const MOZCENTRAL_WEB_FILES = [
         ...COMMON_WEB_FILES,
@@ -1361,10 +1362,7 @@ gulp.task(
           .src("l10n/en-US/*.properties")
           .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
         gulp.src("LICENSE").pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
-        gulp
-          .src(FIREFOX_CONTENT_DIR + "PdfJsDefaultPreferences.sys.mjs")
-          .pipe(transform("utf8", preprocessDefaultPreferences))
-          .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
+        createDefaultPrefsFile().pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
       ]);
     }
   )
