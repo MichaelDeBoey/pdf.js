@@ -1348,6 +1348,7 @@ dialog .separator {
 dialog .buttonRow {
   text-align: center;
   vertical-align: middle;
+  margin-top: 10px;
 }
 
 dialog :link {
@@ -1356,9 +1357,13 @@ dialog :link {
 
 #passwordDialog {
   text-align: center;
+  user-select: none;
 }
 #passwordDialog .toolbarField {
   width: 200px;
+}
+#passwordDialog #passwordShow {
+  margin-inline-end: 4px;
 }
 
 #documentPropertiesDialog {
@@ -1375,9 +1380,6 @@ dialog :link {
 #documentPropertiesDialog .row > p {
   max-width: 225px;
   word-wrap: break-word;
-}
-#documentPropertiesDialog .buttonRow {
-  margin-top: 10px;
 }
 
 .grab-to-pan-grab {

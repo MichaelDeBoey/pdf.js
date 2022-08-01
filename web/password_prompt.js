@@ -21,6 +21,7 @@ import { PasswordResponses } from "pdfjs-lib";
  * @property {HTMLParagraphElement} label - Label containing instructions for
  *                                          entering the password.
  * @property {HTMLInputElement} input - Input field for entering the password.
+ * @property {HTMLInputElement} show - Checkbox to show/hide the password.
  * @property {HTMLButtonElement} submitButton - Button for submitting the
  *                                              password.
  * @property {HTMLButtonElement} cancelButton - Button for cancelling password
@@ -43,6 +44,7 @@ class PasswordPrompt {
     this.dialog = options.dialog;
     this.label = options.label;
     this.input = options.input;
+    this.show = options.show;
     this.submitButton = options.submitButton;
     this.cancelButton = options.cancelButton;
     this.overlayManager = overlayManager;
@@ -56,6 +58,9 @@ class PasswordPrompt {
       if (e.keyCode === /* Enter = */ 13) {
         this.#verify();
       }
+    });
+    this.show.addEventListener("click", () => {
+      this.input.type = this.show.checked ? "text" : "password";
     });
 
     this.overlayManager.register(this.dialog, /* canForceClose = */ true);
@@ -100,6 +105,8 @@ class PasswordPrompt {
     }
     this.close();
     this.input.value = "";
+    this.input.type = "password";
+    this.show.checked = false;
 
     this.#updateCallback(password);
     this.#updateCallback = null;

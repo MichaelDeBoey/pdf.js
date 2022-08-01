@@ -174,6 +174,7 @@ function getViewerConfiguration() {
       dialog: document.getElementById("passwordDialog"),
       label: document.getElementById("passwordText"),
       input: document.getElementById("password"),
+      show: document.getElementById("passwordShow"),
       submitButton: document.getElementById("passwordSubmit"),
       cancelButton: document.getElementById("passwordCancel"),
     },
