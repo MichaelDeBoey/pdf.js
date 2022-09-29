@@ -75,6 +75,7 @@ import { PDFSidebarResizer } from "./pdf_sidebar_resizer.js";
 import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer.js";
 import { PDFViewer } from "./pdf_viewer.js";
 import { SecondaryToolbar } from "./secondary_toolbar.js";
+import { setKeyboardShortcuts } from "./l10n_utils.js";
 import { Toolbar } from "./toolbar.js";
 import { ViewHistory } from "./view_history.js";
 
@@ -423,8 +424,10 @@ const PDFViewerApplication = {
         ? { locale: AppOptions.get("locale") }
         : null
     );
-    const dir = await this.l10n.getDirection();
-    document.getElementsByTagName("html")[0].dir = dir;
+    const dirPromise = this.l10n.getDirection();
+    setKeyboardShortcuts(this.appConfig);
+
+    document.getElementsByTagName("html")[0].dir = await dirPromise;
   },
 
   /**

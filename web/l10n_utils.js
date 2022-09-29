@@ -128,6 +128,59 @@ function formatL10nValue(text, args) {
   });
 }
 
+function setKeyboardShortcuts({ toolbar, secondaryToolbar, sidebar }) {
+  const isMac = navigator.platform.includes("Mac");
+
+  const shortcuts = [
+    // Toolbar
+    {
+      element: toolbar.pageNumber,
+      shortcut: `${isMac ? "Cmd" : "Ctrl"}+Alt+G`,
+    },
+    { element: toolbar.previous, shortcut: "P" },
+    { element: toolbar.next, shortcut: "N" },
+    { element: toolbar.zoomIn, shortcut: `${isMac ? "Cmd" : "Ctrl"}++` },
+    { element: toolbar.zoomOut, shortcut: `${isMac ? "Cmd" : "Ctrl"}+-` },
+    { element: toolbar.viewFind, shortcut: `${isMac ? "Cmd" : "Ctrl"}+F` },
+    { element: toolbar.print, shortcut: `${isMac ? "Cmd" : "Ctrl"}+P` },
+    { element: toolbar.download, shortcut: `${isMac ? "Cmd" : "Ctrl"}+S` },
+    // SecondaryToolbar
+    {
+      element: secondaryToolbar.presentationModeButton,
+      shortcut: `${isMac ? "Cmd" : "Ctrl"}+Alt+P`,
+    },
+    {
+      element: secondaryToolbar.printButton,
+      shortcut: `${isMac ? "Cmd" : "Ctrl"}+P`,
+    },
+    {
+      element: secondaryToolbar.downloadButton,
+      shortcut: `${isMac ? "Cmd" : "Ctrl"}+S`,
+    },
+    { element: secondaryToolbar.firstPageButton, shortcut: "Home" },
+    { element: secondaryToolbar.lastPageButton, shortcut: "End" },
+    { element: secondaryToolbar.pageRotateCwButton, shortcut: "R" },
+    { element: secondaryToolbar.pageRotateCcwButton, shortcut: "Shift+R" },
+    { element: secondaryToolbar.cursorSelectToolButton, shortcut: "S" },
+    { element: secondaryToolbar.cursorHandToolButton, shortcut: "H" },
+    // Sidebar
+    { element: sidebar.toggleButton, shortcut: "F4" },
+  ];
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+    shortcuts.push(
+      { element: toolbar.openFile, shortcut: `${isMac ? "Cmd" : "Ctrl"}+O` },
+      {
+        element: secondaryToolbar.openFileButton,
+        shortcut: `${isMac ? "Cmd" : "Ctrl"}+O`,
+      }
+    );
+  }
+
+  for (const { element, shortcut } of shortcuts) {
+    element.setAttribute("data-l10n-args", JSON.stringify({ shortcut }));
+  }
+}
+
 /**
  * No-op implementation of the localization service.
  * @implements {IL10n}
@@ -148,4 +201,4 @@ const NullL10n = {
   async translate(element) {},
 };
 
-export { fixupLangCode, getL10nFallback, NullL10n };
+export { fixupLangCode, getL10nFallback, NullL10n, setKeyboardShortcuts };

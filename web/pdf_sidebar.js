@@ -309,7 +309,7 @@ class PDFSidebar {
   #showUINotification() {
     this.toggleButton.setAttribute(
       "data-l10n-id",
-      "toggle_sidebar_notification2"
+      "toggle_sidebar_notification3"
     );
     this.l10n.translate(this.toggleButton);
 
@@ -328,7 +328,7 @@ class PDFSidebar {
     }
 
     if (reset) {
-      this.toggleButton.setAttribute("data-l10n-id", "toggle_sidebar");
+      this.toggleButton.setAttribute("data-l10n-id", "toggle_sidebar2");
       this.l10n.translate(this.toggleButton);
     }
   }
