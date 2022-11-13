@@ -14,6 +14,7 @@
  */
 
 import { assert, shadow, unreachable } from "../shared/util.js";
+import { BaseStream } from "./base_stream.js";
 
 const CIRCULAR_REF = Symbol("CIRCULAR_REF");
 const EOF = Symbol("EOF");
@@ -190,6 +191,39 @@ class Dict {
           value[i] = this.xref.fetch(value[i], this.suppressEncryption);
         }
       }
+    }
+    return value;
+  }
+
+  // Same as get(), but returns a `Dict` if the data is an *empty* stream.
+  getDict(key1, key2, key3) {
+    let value = this._map[key1];
+    if (value === undefined && key2 !== undefined) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        key2.length < key1.length
+      ) {
+        unreachable("Dict.getDict: Expected keys to be ordered by length.");
+      }
+      value = this._map[key2];
+      if (value === undefined && key3 !== undefined) {
+        if (
+          (typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          key3.length < key2.length
+        ) {
+          unreachable("Dict.getDict: Expected keys to be ordered by length.");
+        }
+        value = this._map[key3];
+      }
+    }
+    if (value instanceof Ref && this.xref) {
+      value = this.xref.fetch(value, this.suppressEncryption);
+    }
+
+    if (value instanceof BaseStream && value.isEmpty) {
+      return value.dict;
     }
     return value;
   }
