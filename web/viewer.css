@@ -30,6 +30,8 @@
   --progressBar-color: rgba(10, 132, 255, 1);
   --progressBar-bg-color: rgba(221, 221, 222, 1);
   --progressBar-blend-color: rgba(116, 177, 239, 1);
+  --progressBar-progress-duration: 200ms;
+  --progressBar-indeterminate-duration: 1s;
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
   --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
@@ -192,6 +194,8 @@
 @media screen and (prefers-reduced-motion: reduce) {
   :root {
     --sidebar-transition-duration: 0;
+    --progressBar-progress-duration: 0;
+    --progressBar-indeterminate-duration: 0;
   }
 }
 
@@ -403,7 +407,7 @@ body {
   height: 100%;
   background-color: var(--progressBar-color);
   overflow: hidden;
-  transition: transform 200ms;
+  transition: transform var(--progressBar-progress-duration);
 }
 
 @keyframes progressIndeterminate {
@@ -436,7 +440,8 @@ body {
     var(--progressBar-color) 95px,
     var(--progressBar-blend-color) 100px
   );
-  animation: progressIndeterminate 1s linear infinite;
+  animation: progressIndeterminate var(--progressBar-indeterminate-duration)
+    linear infinite;
 }
 
 #outerContainer.sidebarResizing #sidebarContainer,
