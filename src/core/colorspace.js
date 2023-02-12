@@ -26,6 +26,7 @@ import { Dict, Name, Ref } from "./primitives.js";
 import { AlternateCS } from "./alternate_cs.js";
 import { BaseStream } from "./base_stream.js";
 import { MissingDataException } from "./core_utils.js";
+import { PatternCS } from "./pattern_cs.js";
 
 class ColorSpace {
   constructor() {
@@ -293,17 +294,6 @@ class ColorSpace {
         return shadow(this, "cmyk", new DeviceCmykCS());
       },
     });
-  }
-}
-
-class PatternCS extends CS {
-  constructor(baseCS) {
-    super("Pattern", null);
-    this.base = baseCS;
-  }
-
-  isDefaultDecode(decodeMap, bpc) {
-    unreachable("Should not call PatternCS.isDefaultDecode");
   }
 }
 
