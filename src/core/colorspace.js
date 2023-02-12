@@ -24,7 +24,7 @@ import {
 import { CS, isDefaultDecode } from "./cs.js";
 import { Dict, Name, Ref } from "./primitives.js";
 import { AlternateCS } from "./alternate_cs.js";
-import { BaseStream } from "./base_stream.js";
+import { IndexedCS } from "./indexed_cs.js";
 import { MissingDataException } from "./core_utils.js";
 import { PatternCS } from "./pattern_cs.js";
 
@@ -294,87 +294,6 @@ class ColorSpace {
         return shadow(this, "cmyk", new DeviceCmykCS());
       },
     });
-  }
-}
-
-/**
- * The default color is `new Uint8Array([0])`.
- */
-class IndexedCS extends CS {
-  constructor(base, highVal, lookup) {
-    super("Indexed", 1);
-    this.base = base;
-    this.highVal = highVal;
-
-    const length = base.numComps * highVal;
-    this.lookup = new Uint8Array(length);
-
-    if (lookup instanceof BaseStream) {
-      const bytes = lookup.getBytes(length);
-      this.lookup.set(bytes);
-    } else if (typeof lookup === "string") {
-      for (let i = 0; i < length; ++i) {
-        this.lookup[i] = lookup.charCodeAt(i) & 0xff;
-      }
-    } else {
-      throw new FormatError(`IndexedCS - unrecognized lookup table: ${lookup}`);
-    }
-  }
-
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      assert(
-        dest instanceof Uint8ClampedArray,
-        'IndexedCS.getRgbItem: Unsupported "dest" type.'
-      );
-    }
-    const numComps = this.base.numComps;
-    const start = src[srcOffset] * numComps;
-    this.base.getRgbBuffer(this.lookup, start, 1, dest, destOffset, 8, 0);
-  }
-
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      assert(
-        dest instanceof Uint8ClampedArray,
-        'IndexedCS.getRgbBuffer: Unsupported "dest" type.'
-      );
-    }
-    const base = this.base;
-    const numComps = base.numComps;
-    const outputDelta = base.getOutputLength(numComps, alpha01);
-    const lookup = this.lookup;
-
-    for (let i = 0; i < count; ++i) {
-      const lookupPos = src[srcOffset++] * numComps;
-      base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8, alpha01);
-      destOffset += outputDelta;
-    }
-  }
-
-  getOutputLength(inputLength, alpha01) {
-    return this.base.getOutputLength(inputLength * this.base.numComps, alpha01);
-  }
-
-  isDefaultDecode(decodeMap, bpc) {
-    if (!Array.isArray(decodeMap)) {
-      return true;
-    }
-    if (decodeMap.length !== 2) {
-      warn("Decode map length is not correct");
-      return true;
-    }
-    if (!Number.isInteger(bpc) || bpc < 1) {
-      warn("Bits per component is not correct");
-      return true;
-    }
-    return decodeMap[0] === 0 && decodeMap[1] === (1 << bpc) - 1;
   }
 }
 
