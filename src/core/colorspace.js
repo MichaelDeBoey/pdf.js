@@ -60,10 +60,26 @@ function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
   }
 }
 
-class ColorSpace {
+function isDefaultDecode(decode, numComps) {
+  if (!Array.isArray(decode)) {
+    return true;
+  }
+  if (numComps * 2 !== decode.length) {
+    warn("The decode map is not the correct length");
+    return true;
+  }
+  for (let i = 0, ii = decode.length; i < ii; i += 2) {
+    if (decode[i] !== 0 || decode[i + 1] !== 1) {
+      return false;
+    }
+  }
+  return true;
+}
+
+class CS {
   constructor(name, numComps) {
-    if (this.constructor === ColorSpace) {
-      unreachable("Cannot initialize ColorSpace.");
+    if (this.constructor === CS) {
+      unreachable("Cannot initialize CS.");
     }
     this.name = name;
     this.numComps = numComps;
@@ -85,7 +101,7 @@ class ColorSpace {
    * The result placed into the dest array starting from the destOffset.
    */
   getRgbItem(src, srcOffset, dest, destOffset) {
-    unreachable("Should not call ColorSpace.getRgbItem");
+    unreachable("Should not call CS.getRgbItem");
   }
 
   /**
@@ -98,7 +114,7 @@ class ColorSpace {
    * array).
    */
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    unreachable("Should not call ColorSpace.getRgbBuffer");
+    unreachable("Should not call CS.getRgbBuffer");
   }
 
   /**
@@ -107,7 +123,7 @@ class ColorSpace {
    * |alpha01| is either 0 (RGB output) or 1 (RGBA output).
    */
   getOutputLength(inputLength, alpha01) {
-    unreachable("Should not call ColorSpace.getOutputLength");
+    unreachable("Should not call CS.getOutputLength");
   }
 
   /**
@@ -118,10 +134,10 @@ class ColorSpace {
   }
 
   /**
-   * Refer to the static `ColorSpace.isDefaultDecode` method below.
+   * Refer to the `isDefaultDecode` function above.
    */
   isDefaultDecode(decodeMap, bpc) {
-    return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
+    return isDefaultDecode(decodeMap, this.numComps);
   }
 
   /**
@@ -146,7 +162,7 @@ class ColorSpace {
     ) {
       assert(
         dest instanceof Uint8ClampedArray,
-        'ColorSpace.fillRgb: Unsupported "dest" type.'
+        'CS.fillRgb: Unsupported "dest" type.'
       );
     }
     const count = originalWidth * originalHeight;
@@ -258,6 +274,14 @@ class ColorSpace {
    */
   get usesZeroToOneRange() {
     return shadow(this, "usesZeroToOneRange", true);
+  }
+}
+
+class ColorSpace {
+  constructor() {
+    if (this.constructor === ColorSpace) {
+      unreachable("Cannot initialize ColorSpace.");
+    }
   }
 
   /**
@@ -504,19 +528,7 @@ class ColorSpace {
    * @param {number} numComps - Number of components the color space has.
    */
   static isDefaultDecode(decode, numComps) {
-    if (!Array.isArray(decode)) {
-      return true;
-    }
-    if (numComps * 2 !== decode.length) {
-      warn("The decode map is not the correct length");
-      return true;
-    }
-    for (let i = 0, ii = decode.length; i < ii; i += 2) {
-      if (decode[i] !== 0 || decode[i + 1] !== 1) {
-        return false;
-      }
-    }
-    return true;
+    return isDefaultDecode(decode, numComps);
   }
 
   static get singletons() {
@@ -542,7 +554,7 @@ class ColorSpace {
  *
  * The default color is `new Float32Array(new Array(numComps).fill(1))`.
  */
-class AlternateCS extends ColorSpace {
+class AlternateCS extends CS {
   constructor(numComps, base, tintFn) {
     super("Alternate", numComps);
     this.base = base;
@@ -620,7 +632,7 @@ class AlternateCS extends ColorSpace {
   }
 }
 
-class PatternCS extends ColorSpace {
+class PatternCS extends CS {
   constructor(baseCS) {
     super("Pattern", null);
     this.base = baseCS;
@@ -634,7 +646,7 @@ class PatternCS extends ColorSpace {
 /**
  * The default color is `new Uint8Array([0])`.
  */
-class IndexedCS extends ColorSpace {
+class IndexedCS extends CS {
   constructor(base, highVal, lookup) {
     super("Indexed", 1);
     this.base = base;
@@ -715,7 +727,7 @@ class IndexedCS extends ColorSpace {
 /**
  * The default color is `new Float32Array([0])`.
  */
-class DeviceGrayCS extends ColorSpace {
+class DeviceGrayCS extends CS {
   constructor() {
     super("DeviceGray", 1);
   }
@@ -764,7 +776,7 @@ class DeviceGrayCS extends ColorSpace {
 /**
  * The default color is `new Float32Array([0, 0, 0])`.
  */
-class DeviceRgbCS extends ColorSpace {
+class DeviceRgbCS extends CS {
   constructor() {
     super("DeviceRGB", 3);
   }
@@ -888,7 +900,7 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  class DeviceCmykCS extends ColorSpace {
+  class DeviceCmykCS extends CS {
     constructor() {
       super("DeviceCMYK", 4);
     }
@@ -955,7 +967,7 @@ const CalGrayCS = (function CalGrayCSClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  class CalGrayCS extends ColorSpace {
+  class CalGrayCS extends CS {
     constructor(whitePoint, blackPoint, gamma) {
       super("CalGray", 1);
 
@@ -1253,7 +1265,7 @@ const CalRGBCS = (function CalRGBCSClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  class CalRGBCS extends ColorSpace {
+  class CalRGBCS extends CS {
     constructor(whitePoint, blackPoint, gamma, matrix) {
       super("CalRGB", 3);
 
@@ -1435,7 +1447,7 @@ const LabCS = (function LabCSClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  class LabCS extends ColorSpace {
+  class LabCS extends CS {
     constructor(whitePoint, blackPoint, range) {
       super("Lab", 3);
 
