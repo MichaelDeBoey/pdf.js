@@ -24,6 +24,7 @@ import {
 import { CS, isDefaultDecode } from "./cs.js";
 import { Dict, Name, Ref } from "./primitives.js";
 import { AlternateCS } from "./alternate_cs.js";
+import { CalGrayCS } from "./cal_gray_cs.js";
 import { DeviceCmykCS } from "./device_cmyk_cs.js";
 import { DeviceGrayCS } from "./device_gray_cs.js";
 import { DeviceRgbCS } from "./device_rgb_cs.js";
@@ -299,121 +300,6 @@ class ColorSpace {
     });
   }
 }
-
-/**
- * CalGrayCS: Based on "PDF Reference, Sixth Ed", p.245
- *
- * The default color is `new Float32Array([0])`.
- */
-const CalGrayCS = (function CalGrayCSClosure() {
-  function convertToRgb(cs, src, srcOffset, dest, destOffset, scale) {
-    // A represents a gray component of a calibrated gray space.
-    // A <---> AG in the spec
-    const A = src[srcOffset] * scale;
-    const AG = A ** cs.G;
-
-    // Computes L as per spec. ( = cs.YW * AG )
-    // Except if other than default BlackPoint values are used.
-    const L = cs.YW * AG;
-    // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html, Ch 4.
-    // Convert values to rgb range [0, 255].
-    const val = Math.max(295.8 * L ** 0.3333333333333333 - 40.8, 0);
-    dest[destOffset] = val;
-    dest[destOffset + 1] = val;
-    dest[destOffset + 2] = val;
-  }
-
-  // eslint-disable-next-line no-shadow
-  class CalGrayCS extends CS {
-    constructor(whitePoint, blackPoint, gamma) {
-      super("CalGray", 1);
-
-      if (!whitePoint) {
-        throw new FormatError(
-          "WhitePoint missing - required for color space CalGray"
-        );
-      }
-      blackPoint = blackPoint || [0, 0, 0];
-      gamma = gamma || 1;
-
-      // Translate arguments to spec variables.
-      this.XW = whitePoint[0];
-      this.YW = whitePoint[1];
-      this.ZW = whitePoint[2];
-
-      this.XB = blackPoint[0];
-      this.YB = blackPoint[1];
-      this.ZB = blackPoint[2];
-
-      this.G = gamma;
-
-      // Validate variables as per spec.
-      if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
-        throw new FormatError(
-          `Invalid WhitePoint components for ${this.name}` +
-            ", no fallback available"
-        );
-      }
-
-      if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
-        info(`Invalid BlackPoint for ${this.name}, falling back to default.`);
-        this.XB = this.YB = this.ZB = 0;
-      }
-
-      if (this.XB !== 0 || this.YB !== 0 || this.ZB !== 0) {
-        warn(
-          `${this.name}, BlackPoint: XB: ${this.XB}, YB: ${this.YB}, ` +
-            `ZB: ${this.ZB}, only default values are supported.`
-        );
-      }
-
-      if (this.G < 1) {
-        info(
-          `Invalid Gamma: ${this.G} for ${this.name}, ` +
-            "falling back to default."
-        );
-        this.G = 1;
-      }
-    }
-
-    getRgbItem(src, srcOffset, dest, destOffset) {
-      if (
-        typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")
-      ) {
-        assert(
-          dest instanceof Uint8ClampedArray,
-          'CalGrayCS.getRgbItem: Unsupported "dest" type.'
-        );
-      }
-      convertToRgb(this, src, srcOffset, dest, destOffset, 1);
-    }
-
-    getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-      if (
-        typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")
-      ) {
-        assert(
-          dest instanceof Uint8ClampedArray,
-          'CalGrayCS.getRgbBuffer: Unsupported "dest" type.'
-        );
-      }
-      const scale = 1 / ((1 << bits) - 1);
-
-      for (let i = 0; i < count; ++i) {
-        convertToRgb(this, src, srcOffset, dest, destOffset, scale);
-        srcOffset += 1;
-        destOffset += 3 + alpha01;
-      }
-    }
-
-    getOutputLength(inputLength, alpha01) {
-      return inputLength * (3 + alpha01);
-    }
-  }
-  return CalGrayCS;
-})();
 
 /**
  * CalRGBCS: Based on "PDF Reference, Sixth Ed", p.247
