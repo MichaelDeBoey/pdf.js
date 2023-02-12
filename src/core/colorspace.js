@@ -24,6 +24,7 @@ import {
 import { CS, isDefaultDecode } from "./cs.js";
 import { Dict, Name, Ref } from "./primitives.js";
 import { AlternateCS } from "./alternate_cs.js";
+import { DeviceGrayCS } from "./device_gray_cs.js";
 import { IndexedCS } from "./indexed_cs.js";
 import { MissingDataException } from "./core_utils.js";
 import { PatternCS } from "./pattern_cs.js";
@@ -294,55 +295,6 @@ class ColorSpace {
         return shadow(this, "cmyk", new DeviceCmykCS());
       },
     });
-  }
-}
-
-/**
- * The default color is `new Float32Array([0])`.
- */
-class DeviceGrayCS extends CS {
-  constructor() {
-    super("DeviceGray", 1);
-  }
-
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      assert(
-        dest instanceof Uint8ClampedArray,
-        'DeviceGrayCS.getRgbItem: Unsupported "dest" type.'
-      );
-    }
-    const c = src[srcOffset] * 255;
-    dest[destOffset] = dest[destOffset + 1] = dest[destOffset + 2] = c;
-  }
-
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      assert(
-        dest instanceof Uint8ClampedArray,
-        'DeviceGrayCS.getRgbBuffer: Unsupported "dest" type.'
-      );
-    }
-    const scale = 255 / ((1 << bits) - 1);
-    let j = srcOffset,
-      q = destOffset;
-    for (let i = 0; i < count; ++i) {
-      const c = scale * src[j++];
-      dest[q++] = c;
-      dest[q++] = c;
-      dest[q++] = c;
-      q += alpha01;
-    }
-  }
-
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01);
   }
 }
 
