@@ -23,6 +23,7 @@ import {
 } from "../shared/util.js";
 import { CS, isDefaultDecode } from "./cs.js";
 import { Dict, Name, Ref } from "./primitives.js";
+import { AlternateCS } from "./alternate_cs.js";
 import { BaseStream } from "./base_stream.js";
 import { MissingDataException } from "./core_utils.js";
 
@@ -292,92 +293,6 @@ class ColorSpace {
         return shadow(this, "cmyk", new DeviceCmykCS());
       },
     });
-  }
-}
-
-/**
- * Alternate color space handles both Separation and DeviceN color spaces.  A
- * Separation color space is actually just a DeviceN with one color component.
- * Both color spaces use a tinting function to convert colors to a base color
- * space.
- *
- * The default color is `new Float32Array(new Array(numComps).fill(1))`.
- */
-class AlternateCS extends CS {
-  constructor(numComps, base, tintFn) {
-    super("Alternate", numComps);
-    this.base = base;
-    this.tintFn = tintFn;
-    this.tmpBuf = new Float32Array(base.numComps);
-  }
-
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      assert(
-        dest instanceof Uint8ClampedArray,
-        'AlternateCS.getRgbItem: Unsupported "dest" type.'
-      );
-    }
-    const tmpBuf = this.tmpBuf;
-    this.tintFn(src, srcOffset, tmpBuf, 0);
-    this.base.getRgbItem(tmpBuf, 0, dest, destOffset);
-  }
-
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      assert(
-        dest instanceof Uint8ClampedArray,
-        'AlternateCS.getRgbBuffer: Unsupported "dest" type.'
-      );
-    }
-    const tintFn = this.tintFn;
-    const base = this.base;
-    const scale = 1 / ((1 << bits) - 1);
-    const baseNumComps = base.numComps;
-    const usesZeroToOneRange = base.usesZeroToOneRange;
-    const isPassthrough =
-      (base.isPassthrough(8) || !usesZeroToOneRange) && alpha01 === 0;
-    let pos = isPassthrough ? destOffset : 0;
-    const baseBuf = isPassthrough
-      ? dest
-      : new Uint8ClampedArray(baseNumComps * count);
-    const numComps = this.numComps;
-
-    const scaled = new Float32Array(numComps);
-    const tinted = new Float32Array(baseNumComps);
-    let i, j;
-
-    for (i = 0; i < count; i++) {
-      for (j = 0; j < numComps; j++) {
-        scaled[j] = src[srcOffset++] * scale;
-      }
-      tintFn(scaled, 0, tinted, 0);
-      if (usesZeroToOneRange) {
-        for (j = 0; j < baseNumComps; j++) {
-          baseBuf[pos++] = tinted[j] * 255;
-        }
-      } else {
-        base.getRgbItem(tinted, 0, baseBuf, pos);
-        pos += baseNumComps;
-      }
-    }
-
-    if (!isPassthrough) {
-      base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
-    }
-  }
-
-  getOutputLength(inputLength, alpha01) {
-    return this.base.getOutputLength(
-      (inputLength * this.base.numComps) / this.numComps,
-      alpha01
-    );
   }
 }
 
