@@ -25,6 +25,7 @@ import { CS, isDefaultDecode } from "./cs.js";
 import { Dict, Name, Ref } from "./primitives.js";
 import { AlternateCS } from "./alternate_cs.js";
 import { DeviceGrayCS } from "./device_gray_cs.js";
+import { DeviceRgbCS } from "./device_rgb_cs.js";
 import { IndexedCS } from "./indexed_cs.js";
 import { MissingDataException } from "./core_utils.js";
 import { PatternCS } from "./pattern_cs.js";
@@ -295,63 +296,6 @@ class ColorSpace {
         return shadow(this, "cmyk", new DeviceCmykCS());
       },
     });
-  }
-}
-
-/**
- * The default color is `new Float32Array([0, 0, 0])`.
- */
-class DeviceRgbCS extends CS {
-  constructor() {
-    super("DeviceRGB", 3);
-  }
-
-  getRgbItem(src, srcOffset, dest, destOffset) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      assert(
-        dest instanceof Uint8ClampedArray,
-        'DeviceRgbCS.getRgbItem: Unsupported "dest" type.'
-      );
-    }
-    dest[destOffset] = src[srcOffset] * 255;
-    dest[destOffset + 1] = src[srcOffset + 1] * 255;
-    dest[destOffset + 2] = src[srcOffset + 2] * 255;
-  }
-
-  getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      assert(
-        dest instanceof Uint8ClampedArray,
-        'DeviceRgbCS.getRgbBuffer: Unsupported "dest" type.'
-      );
-    }
-    if (bits === 8 && alpha01 === 0) {
-      dest.set(src.subarray(srcOffset, srcOffset + count * 3), destOffset);
-      return;
-    }
-    const scale = 255 / ((1 << bits) - 1);
-    let j = srcOffset,
-      q = destOffset;
-    for (let i = 0; i < count; ++i) {
-      dest[q++] = scale * src[j++];
-      dest[q++] = scale * src[j++];
-      dest[q++] = scale * src[j++];
-      q += alpha01;
-    }
-  }
-
-  getOutputLength(inputLength, alpha01) {
-    return ((inputLength * (3 + alpha01)) / 3) | 0;
-  }
-
-  isPassthrough(bits) {
-    return bits === 8;
   }
 }
 
