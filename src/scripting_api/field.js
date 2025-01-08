@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createActionsMap, getFieldType } from "./common.js";
+import { createActionsMap, FieldType, getFieldType } from "./common.js";
 import { Color } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
 
@@ -245,7 +245,12 @@ class Field extends PDFObject {
       return;
     }
 
-    if (value === "" || typeof value !== "string") {
+    if (
+      value === "" ||
+      typeof value !== "string" ||
+      // When the field type is date or time, the value must be a string.
+      this._fieldType >= FieldType.date
+    ) {
       this._originalValue = undefined;
       this._value = value;
       return;
@@ -581,6 +586,12 @@ class RadioButtonField extends Field {
     this._hasBeenInitialized = true;
     this._value = data.value || "";
   }
+
+  get _siblings() {
+    return this._radioIds.filter(id => id !== this._id);
+  }
+
+  set _siblings(_) {}
 
   get value() {
     return this._value;

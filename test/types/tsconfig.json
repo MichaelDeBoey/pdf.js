@@ -3,24 +3,19 @@
     "outDir": "../../build/tmp",
     "sourceMap": true,
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "target": "ESNext",
     "module": "ESNext",
     "baseUrl": "./",
     "strict": true,
-    "types": [],
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "types": ["node"],
+    "lib": ["ESNext", "DOM"],
     "paths": {
       "pdfjs-dist": ["../../build/typestest"],
-      "pdfjs-dist/*": ["../../build/typestest/types/*"]
+      "pdfjs-dist/*": ["../../build/typestest/*"]
     }
   },
-  "files": [
-    "main.ts"
-  ]
+  "exclude": ["node_modules"]
 }

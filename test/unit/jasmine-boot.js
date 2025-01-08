@@ -42,7 +42,7 @@
 
 import { GlobalWorkerOptions } from "pdfjs/display/worker_options.js";
 import { isNodeJS } from "../../src/shared/util.js";
-import { TestReporter } from "./testreporter.js";
+import { TestReporter } from "../reporter.js";
 
 async function initializePDFJS(callback) {
   await Promise.all(
@@ -50,7 +50,9 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/annotation_spec.js",
       "pdfjs-test/unit/annotation_storage_spec.js",
       "pdfjs-test/unit/api_spec.js",
+      "pdfjs-test/unit/app_options_spec.js",
       "pdfjs-test/unit/bidi_spec.js",
+      "pdfjs-test/unit/canvas_factory_spec.js",
       "pdfjs-test/unit/cff_parser_spec.js",
       "pdfjs-test/unit/cmap_spec.js",
       "pdfjs-test/unit/colorspace_spec.js",
@@ -85,6 +87,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/scripting_spec.js",
       "pdfjs-test/unit/stream_spec.js",
       "pdfjs-test/unit/struct_tree_spec.js",
+      "pdfjs-test/unit/svg_factory_spec.js",
       "pdfjs-test/unit/text_layer_spec.js",
       "pdfjs-test/unit/type1_parser_spec.js",
       "pdfjs-test/unit/ui_utils_spec.js",

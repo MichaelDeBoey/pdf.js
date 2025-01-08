@@ -16,10 +16,14 @@
 /** @typedef {import("./interfaces").IL10n} IL10n */
 
 /**
+ * NOTE: The L10n-implementations should use lowercase language-codes
+ *       internally.
  * @implements {IL10n}
  */
 class L10n {
   #dir;
+
+  #elements;
 
   #lang;
 
@@ -28,7 +32,7 @@ class L10n {
   constructor({ lang, isRTL }, l10n = null) {
     this.#lang = L10n.#fixupLangCode(lang);
     this.#l10n = l10n;
-    this.#dir = isRTL ?? L10n.#isRTL(this.#lang) ? "rtl" : "ltr";
+    this.#dir = (isRTL ?? L10n.#isRTL(this.#lang)) ? "rtl" : "ltr";
   }
 
   _setL10n(l10n) {
@@ -62,17 +66,39 @@ class L10n {
         args,
       },
     ]);
-    return messages?.[0].value || fallback;
+    return messages[0]?.value || fallback;
   }
 
   /** @inheritdoc */
   async translate(element) {
+    (this.#elements ||= new Set()).add(element);
     try {
       this.#l10n.connectRoot(element);
       await this.#l10n.translateRoots();
     } catch {
       // Element is under an existing root, so there is no need to add it again.
     }
+  }
+
+  /** @inheritdoc */
+  async translateOnce(element) {
+    try {
+      await this.#l10n.translateElements([element]);
+    } catch (ex) {
+      console.error("translateOnce:", ex);
+    }
+  }
+
+  /** @inheritdoc */
+  async destroy() {
+    if (this.#elements) {
+      for (const element of this.#elements) {
+        this.#l10n.disconnectRoot(element);
+      }
+      this.#elements.clear();
+      this.#elements = null;
+    }
+    this.#l10n.pauseObserving();
   }
 
   /** @inheritdoc */
@@ -86,24 +112,27 @@ class L10n {
   }
 
   static #fixupLangCode(langCode) {
+    // Use only lowercase language-codes internally, and fallback to English.
+    langCode = langCode?.toLowerCase() || "en-us";
+
     // Try to support "incompletely" specified language codes (see issue 13689).
     const PARTIAL_LANG_CODES = {
-      en: "en-US",
-      es: "es-ES",
-      fy: "fy-NL",
-      ga: "ga-IE",
-      gu: "gu-IN",
-      hi: "hi-IN",
-      hy: "hy-AM",
-      nb: "nb-NO",
-      ne: "ne-NP",
-      nn: "nn-NO",
-      pa: "pa-IN",
-      pt: "pt-PT",
-      sv: "sv-SE",
-      zh: "zh-CN",
+      en: "en-us",
+      es: "es-es",
+      fy: "fy-nl",
+      ga: "ga-ie",
+      gu: "gu-in",
+      hi: "hi-in",
+      hy: "hy-am",
+      nb: "nb-no",
+      ne: "ne-np",
+      nn: "nn-no",
+      pa: "pa-in",
+      pt: "pt-pt",
+      sv: "sv-se",
+      zh: "zh-cn",
     };
-    return PARTIAL_LANG_CODES[langCode?.toLowerCase()] || langCode;
+    return PARTIAL_LANG_CODES[langCode] || langCode;
   }
 
   static #isRTL(lang) {
@@ -112,4 +141,6 @@ class L10n {
   }
 }
 
-export { L10n };
+const GenericL10n = null;
+
+export { GenericL10n, L10n };

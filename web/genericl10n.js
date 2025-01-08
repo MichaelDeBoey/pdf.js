@@ -17,7 +17,18 @@
 
 import { FluentBundle, FluentResource } from "fluent-bundle";
 import { DOMLocalization } from "fluent-dom";
+import { fetchData } from "pdfjs-lib";
 import { L10n } from "./l10n.js";
+
+function createBundle(lang, text) {
+  const resource = new FluentResource(text);
+  const bundle = new FluentBundle(lang);
+  const errors = bundle.addResource(resource);
+  if (errors.length) {
+    console.error("L10n errors", errors);
+  }
+  return bundle;
+}
 
 /**
  * @implements {IL10n}
@@ -25,16 +36,18 @@ import { L10n } from "./l10n.js";
 class GenericL10n extends L10n {
   constructor(lang) {
     super({ lang });
-    this._setL10n(
-      new DOMLocalization(
-        [],
-        GenericL10n.#generateBundles.bind(
+
+    const generateBundles = !lang
+      ? GenericL10n.#generateBundlesFallback.bind(
           GenericL10n,
-          "en-US",
           this.getLanguage()
         )
-      )
-    );
+      : GenericL10n.#generateBundles.bind(
+          GenericL10n,
+          "en-us",
+          this.getLanguage()
+        );
+    this._setL10n(new DOMLocalization([], generateBundles));
   }
 
   /**
@@ -45,12 +58,24 @@ class GenericL10n extends L10n {
    */
   static async *#generateBundles(defaultLang, baseLang) {
     const { baseURL, paths } = await this.#getPaths();
-    const langs =
-      baseLang === defaultLang ? [baseLang] : [baseLang, defaultLang];
+
+    const langs = [baseLang];
+    if (defaultLang !== baseLang) {
+      // Also fallback to the short-format of the base language
+      // (see issue 17269).
+      const shortLang = baseLang.split("-", 1)[0];
+
+      if (shortLang !== baseLang) {
+        langs.push(shortLang);
+      }
+      langs.push(defaultLang);
+    }
     for (const lang of langs) {
       const bundle = await this.#createBundle(lang, baseURL, paths);
       if (bundle) {
         yield bundle;
+      } else if (lang === "en-us") {
+        yield this.#createBundleFallback(lang);
       }
     }
   }
@@ -61,22 +86,38 @@ class GenericL10n extends L10n {
       return null;
     }
     const url = new URL(path, baseURL);
-    const data = await fetch(url);
-    const text = await data.text();
-    const resource = new FluentResource(text);
-    const bundle = new FluentBundle(lang);
-    const errors = bundle.addResource(resource);
-    if (errors.length) {
-      console.error("L10n errors", errors);
-    }
-    return bundle;
+    const text = await fetchData(url, /* type = */ "text");
+
+    return createBundle(lang, text);
   }
 
   static async #getPaths() {
-    const { href } = document.querySelector(`link[type="application/l10n"]`);
-    const data = await fetch(href);
-    const paths = await data.json();
-    return { baseURL: href.replace(/[^/]*$/, "") || "./", paths };
+    try {
+      const { href } = document.querySelector(`link[type="application/l10n"]`);
+      const paths = await fetchData(href, /* type = */ "json");
+
+      return { baseURL: href.replace(/[^/]*$/, "") || "./", paths };
+    } catch {}
+    return { baseURL: "./", paths: Object.create(null) };
+  }
+
+  static async *#generateBundlesFallback(lang) {
+    yield this.#createBundleFallback(lang);
+  }
+
+  static async #createBundleFallback(lang) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      throw new Error("Not implemented: #createBundleFallback");
+    }
+    const text =
+      typeof PDFJSDev === "undefined"
+        ? await fetchData(
+            new URL("../l10n/en-US/viewer.ftl", window.location.href),
+            /* type = */ "text"
+          )
+        : PDFJSDev.eval("DEFAULT_FTL");
+
+    return createBundle(lang, text);
   }
 }
 
