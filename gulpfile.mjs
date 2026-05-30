@@ -723,6 +723,8 @@ function runTests(testsName, { bot = false } = {}) {
   return new Promise((resolve, reject) => {
     console.log("\n### Running " + testsName + " tests");
 
+    bot ??= process.argv.includes("--bot");
+
     const PDF_TEST = process.env.PDF_TEST || "test_manifest.json";
     let forceNoChrome = false;
     const args = ["test.mjs"];
@@ -886,6 +888,8 @@ function collectArgs(options, args) {
 
 function makeRef(done, bot) {
   console.log("\n### Creating reference images");
+
+  bot ??= process.argv.includes("--bot");
 
   let forceNoChrome = false;
   const args = ["test.mjs", "--masterMode"];
